@@ -5,10 +5,11 @@ interface Props {
   tags: string[];
   github?: string | null;
   demo?: string | null;
+  links?: { label: string; href: string }[];
   featured?: boolean;
 }
 
-const { title, description, tags, github = null, demo = null, featured = false } = Astro.props;
+const { title, description, tags, github = null, demo = null, links = [], featured = false } = Astro.props;
 
 // Color map for common tech tags
 const tagColors: Record<string, string> = {
@@ -62,8 +63,8 @@ function tagClass(tag: string) {
   </div>
 
   <!-- Links -->
-  {(github || demo) && (
-    <div class="flex items-center gap-3 mt-auto pt-4 border-t border-dark-border/50">
+  {(github || demo || links.length > 0) && (
+    <div class="flex flex-wrap items-center gap-3 mt-auto pt-4 border-t border-dark-border/50">
       {github && (
         <a
           href={github}
@@ -90,6 +91,19 @@ function tagClass(tag: string) {
           Live Demo
         </a>
       )}
+      {links.map(({ label, href }) => (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center gap-1.5 text-sm text-accent-light hover:text-accent transition-colors"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          {label}
+        </a>
+      ))}
     </div>
   )}
 </div>

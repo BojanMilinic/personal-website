@@ -2,8 +2,12 @@ export const projects = [
   {
     title: 'Groundwater Level Data Compiler and Data Pipeline',
     description:
-      'Automated Python pipeline for compiling and standardizing groundwater level and oil contamination data from multiple databases. Includes data cleaning, unit normalization, and structured export workflows ready for analysis and public release. The data are published as data releases. Data Sets from the National Crude Oil Spill Fate and Natural Attenuation Research Site near Bemidji, Minnesota (https://doi.org/10.5066/P9FJ8I0P) along with Sampling site information, well construction details, and data dictionaries (https://doi.org/10.5066/F7736PDR)',
+      'Automated Python pipeline for compiling and standardizing groundwater level and oil contamination data from multiple databases. Includes data cleaning, unit normalization, and structured export workflows ready for analysis and public release. Published as USGS data releases from the National Crude Oil Spill research site near Bemidji, Minnesota.',
     tags: ['Python', 'Pandas', 'Automation', 'Groundwater', 'Oil'],
+    links: [
+      { label: 'Bemidji data release', href: 'https://doi.org/10.5066/P9FJ8I0P' },
+      { label: 'Site & well data release', href: 'https://doi.org/10.5066/F7736PDR' },
+    ],
     github: null,
     demo: null,
     featured: true,
@@ -11,8 +15,11 @@ export const projects = [
   {
     title: 'Geospatial Data Summarization and Figure Automation',
     description:
-      'ArcPy-based workflow for automatically generating publication-quality geospatial figures from hydrological model outputs. Reduces manual GIS drafting from days to minutes by templating map layouts and symbology. This data processing pipeline transformed raw geogenic water contamination data into standard national percentiles based on study basin. The figures created from this pipeline were used in "Prioritizing water availability study settings to address geogenic contaminants and related societal factors" by Melinda Erickson et al in the Environmental Monitoring and Accessment journal. (https://doi.org/10.1007/s10661-024-12362-2). Includes figures 3, 4, 5, and 6.',
+      'ArcPy-based workflow for automatically generating publication-quality geospatial figures from hydrological model outputs — reducing manual GIS drafting from days to minutes. Transformed raw geogenic water contamination data into national percentiles by study basin. Produced figures 3–6 in Erickson et al. (Environmental Monitoring and Assessment, 2024).',
     tags: ['Python', 'ArcGIS Pro', 'ArcPy', 'GIS', 'Watershed'],
+    links: [
+      { label: 'Erickson et al. 2024', href: 'https://doi.org/10.1007/s10661-024-12362-2' },
+    ],
     github: null,
     demo: null,
     featured: true,
@@ -21,8 +28,11 @@ export const projects = [
   {
     title: 'StreamStats Validation and Testing',
     description:
-      'Developed validation tests for the [StreamStats](https://www.usgs.gov/streamstats) application, including percent error checks, automated logging reports, and custom calculation test methods to ensure accurate streamflow statistics.',
+      'Developed validation tests for the USGS StreamStats application, including percent error checks, automated logging reports, and custom calculation test methods to ensure accurate streamflow statistics.',
     tags: ['Python', 'Geospatial', 'Hydrology', 'Watershed'],
+    links: [
+      { label: 'StreamStats', href: 'https://www.usgs.gov/streamstats' },
+    ],
     github: null,
     demo: null,
     featured: true,

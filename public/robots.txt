@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /sitemap
+
+Sitemap: https://bojanmilinic.com/sitemap-index.xml

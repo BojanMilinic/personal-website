@@ -70,12 +70,15 @@ All site content is static and data-driven. The pattern is:
 | `/blog-archive/02-pelican/index.html` | Static archived Pelican output copied into `public/blog-archive/` |
 | `/contact` | Contact (professional nav) |
 | `/teaching` | Teaching overview (teaching nav) |
-| `/globe` | Interactive globe (teaching nav) |
+| `/globe` | Redirect stub (meta-refresh) to `/globe-v2`; excluded from sitemap.xml |
+| `/globe-v2` | Country-outline map of students taught — the "Globe" nav link (teaching nav) |
+| `/globe-v3` | Atlas variant of the students-taught map |
 | `/notebooks` | Quarto notebooks (teaching nav) |
 | `/book` | Central booking form (Formspree); collects name, email, session interest, format, who-for, background/age, message; redirects to `/booking-confirmed` on submit |
 | `/booking-confirmed` | Thank-you page shown after form submission; has Browse Sessions + Email Bojan CTAs |
 | `/dance` | Branches of Dance landing page; QR code on flyers points here; has Python/dance joke; CTAs to `/dance-booking` and `/teaching` |
 | `/dance-booking` | Free intro class booking; links to `/book` |
+| `/sitemap` | Internal dev page listing every route with descriptions; not in nav, excluded from sitemap.xml |
 
 ## Tailwind custom tokens
 

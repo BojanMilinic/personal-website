@@ -15,6 +15,9 @@ const {
   darkMode = false,
   navVariant = 'professional',
 } = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const fullTitle = `${title} · Bojan Milinic`;
 ---
 
 <!doctype html>
@@ -22,8 +25,18 @@ const {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title} · Bojan Milinic</title>
+    <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content="Bojan Milinic" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,8 +46,87 @@ const {
     />
   </head>
   <body class={darkMode ? 'bg-dark-base text-slate-300 font-sans' : 'bg-white text-slate-800 font-sans'}>
+    {darkMode && (
+      <div id="mouse-bg" class="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true">
+        <div class="absolute inset-0 mouse-bg-glow"></div>
+        <div class="absolute inset-0 mouse-bg-grid"></div>
+      </div>
+    )}
     <Nav variant={navVariant} />
     <slot />
     <Footer darkMode={darkMode} />
   </body>
 </html>
+
+<style>
+  /* Mouse-reactive background: accent glow + grid revealed around the cursor */
+  #mouse-bg {
+    --mx: 50vw;
+    --my: 35vh;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  #mouse-bg.is-active {
+    opacity: 1;
+  }
+  .mouse-bg-glow {
+    background: radial-gradient(
+      600px circle at var(--mx) var(--my),
+      rgba(59, 130, 246, 0.1),
+      transparent 70%
+    );
+  }
+  .mouse-bg-grid {
+    background-image:
+      linear-gradient(rgba(59, 130, 246, 0.25) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.25) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: radial-gradient(
+      280px circle at var(--mx) var(--my),
+      black,
+      transparent 75%
+    );
+    mask-image: radial-gradient(
+      280px circle at var(--mx) var(--my),
+      black,
+      transparent 75%
+    );
+  }
+</style>
+
+<script>
+  const bg = document.getElementById('mouse-bg');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (bg && !reducedMotion) {
+    let targetX = window.innerWidth / 2;
+    let targetY = window.innerHeight / 3;
+    let x = targetX;
+    let y = targetY;
+    let rafId: number | null = null;
+
+    // Ease toward the cursor so the glow trails smoothly instead of snapping
+    const animate = () => {
+      x += (targetX - x) * 0.12;
+      y += (targetY - y) * 0.12;
+      bg.style.setProperty('--mx', `${x}px`);
+      bg.style.setProperty('--my', `${y}px`);
+      if (Math.abs(targetX - x) > 0.5 || Math.abs(targetY - y) > 0.5) {
+        rafId = requestAnimationFrame(animate);
+      } else {
+        rafId = null;
+      }
+    };
+
+    window.addEventListener('pointermove', (e) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      bg.classList.add('is-active');
+      if (rafId === null) rafId = requestAnimationFrame(animate);
+    });
+
+    window.addEventListener('pointerleave', () => {
+      bg.classList.remove('is-active');
+    });
+  }
+</script>
