@@ -72,12 +72,54 @@ import { books } from '../data/books.js';
   const revealAll = document.querySelector<HTMLInputElement>('#reveal-all');
   const coverUrl = (isbn: string) => `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
   const coverColors = ['#2563eb', '#0f766e', '#b45309', '#7c3aed', '#be123c', '#0369a1', '#4d7c0f', '#c2410c'];
-  const positions = [
-    [400, 255, 205, -0.25], [632, 305, 178, 0.18], [837, 245, 224, -0.12], [1088, 290, 188, 0.22], [1303, 250, 212, -0.16],
-    [435, 605, 180, 0.12], [642, 590, 218, -0.2], [887, 630, 187, 0.14], [1101, 598, 220, -0.1], [1348, 620, 176, 0.2],
-    [386, 910, 220, -0.18], [635, 945, 184, 0.1], [846, 930, 208, -0.14], [1082, 958, 182, 0.2], [1293, 925, 224, -0.12],
-    [455, 1270, 184, 0.18], [665, 1245, 214, -0.1], [906, 1285, 178, 0.14], [1111, 1245, 220, -0.18], [1360, 1280, 188, 0.1],
-  ];
+  const columns = 8;
+  const columnGap = 290;
+  const rowGap = 360;
+  const horizontalPadding = 280;
+  const verticalPadding = 220;
+  const bookSizes = [176, 204, 188, 216, 180, 200, 190, 210];
+  const tilts = [-0.25, 0.18, -0.12, 0.22, -0.16, 0.12, -0.2, 0.14];
+  const rows = Math.ceil(books.length / columns);
+  const fieldWidth = horizontalPadding * 2 + (columns - 1) * columnGap + Math.max(...bookSizes);
+  const fieldHeight = verticalPadding * 2 + Math.max(0, rows - 1) * rowGap + Math.max(...bookSizes) * 1.5;
+
+  const getDominantColor = (image: HTMLImageElement) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 24;
+    canvas.height = 36;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) return null;
+
+    try {
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const buckets = new Map<string, { count: number; red: number; green: number; blue: number }>();
+
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index + 3] < 200) continue;
+        const red = pixels[index];
+        const green = pixels[index + 1];
+        const blue = pixels[index + 2];
+        const key = `${Math.floor(red / 32)}-${Math.floor(green / 32)}-${Math.floor(blue / 32)}`;
+        const bucket = buckets.get(key) ?? { count: 0, red: 0, green: 0, blue: 0 };
+        bucket.count += 1;
+        bucket.red += red;
+        bucket.green += green;
+        bucket.blue += blue;
+        buckets.set(key, bucket);
+      }
+
+      const dominant = [...buckets.values()].sort((left, right) => right.count - left.count)[0];
+      if (!dominant) return null;
+      const red = Math.round(dominant.red / dominant.count);
+      const green = Math.round(dominant.green / dominant.count);
+      const blue = Math.round(dominant.blue / dominant.count);
+      return `rgb(${red} ${green} ${blue})`;
+    } catch {
+      return null;
+    }
+  };
+
   let wasDragging = false;
 
   if (wall && viewport && stage && dialog && revealAll) {
@@ -85,11 +127,15 @@ import { books } from '../data/books.js';
       const button = document.createElement('button');
       button.className = 'book';
       button.type = 'button';
+      button.draggable = false;
       button.style.setProperty('--delay', `${Math.min(index * 35, 700)}ms`);
-      const [x, y, size, tilt] = positions[index % positions.length];
-      const orbit = Math.floor(index / positions.length);
-      button.style.setProperty('--x', `${x + orbit * 120}px`);
-      button.style.setProperty('--y', `${y + orbit * 110}px`);
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      const size = bookSizes[index % bookSizes.length];
+      const tilt = tilts[index % tilts.length];
+      const rowOffset = row % 2 === 0 ? 0 : 35;
+      button.style.setProperty('--x', `${horizontalPadding + column * columnGap + rowOffset}px`);
+      button.style.setProperty('--y', `${verticalPadding + row * rowGap}px`);
       button.style.setProperty('--size', `${size}px`);
       button.style.setProperty('--tilt', `${tilt}deg`);
       button.style.setProperty('--cover-color', coverColors[index % coverColors.length]);
@@ -97,10 +143,16 @@ import { books } from '../data/books.js';
       button.setAttribute('aria-label', `${book.title} by ${book.author}`);
 
       const image = document.createElement('img');
+      image.crossOrigin = 'anonymous';
+      image.draggable = false;
       image.src = coverUrl(book.isbn);
       image.alt = `Cover of ${book.title}`;
       image.loading = index < 8 ? 'eager' : 'lazy';
       image.decoding = 'async';
+      image.addEventListener('load', () => {
+        const dominantColor = getDominantColor(image);
+        if (dominantColor) button.style.setProperty('--cover-color', dominantColor);
+      });
       image.addEventListener('error', () => {
         image.remove();
         button.classList.add('fallback');
@@ -148,8 +200,8 @@ import { books } from '../data/books.js';
       });
     });
 
-    const fieldWidth = 2000;
-    const fieldHeight = 1800;
+    wall.style.width = `${fieldWidth}px`;
+    wall.style.height = `${fieldHeight}px`;
     let zoom = 1;
 
     const centerCollection = () => {
@@ -196,10 +248,6 @@ import { books } from '../data/books.js';
     let startTop = 0;
     viewport.addEventListener('pointerdown', (event) => {
       if (event.button !== 0) return;
-      if ((event.target as HTMLElement).closest('.book')) {
-        wasDragging = false;
-        return;
-      }
       pointerDown = true;
       wasDragging = false;
       startX = event.clientX;
@@ -207,16 +255,20 @@ import { books } from '../data/books.js';
       startLeft = viewport.scrollLeft;
       startTop = viewport.scrollTop;
       viewport.classList.add('dragging');
-      viewport.setPointerCapture(event.pointerId);
     });
     viewport.addEventListener('pointermove', (event) => {
       if (!pointerDown) return;
       const dx = event.clientX - startX;
       const dy = event.clientY - startY;
-      if (Math.hypot(dx, dy) > 6) wasDragging = true;
+      if (!wasDragging && Math.hypot(dx, dy) > 6) {
+        wasDragging = true;
+        viewport.setPointerCapture(event.pointerId);
+      }
+      if (wasDragging) event.preventDefault();
       viewport.scrollLeft = startLeft - dx;
       viewport.scrollTop = startTop - dy;
     });
+    viewport.addEventListener('dragstart', (event) => event.preventDefault());
     const endDrag = () => {
       pointerDown = false;
       viewport.classList.remove('dragging');
@@ -329,6 +381,8 @@ import { books } from '../data/books.js';
     touch-action: none;
     overscroll-behavior: none;
     scrollbar-width: none;
+    user-select: none;
+    -webkit-user-select: none;
     background:
       radial-gradient(circle at 50% 45%, rgba(37, 99, 235, 0.22), transparent 35%),
       radial-gradient(circle at 50% 50%, #243247 0, #172033 50%, #0b1220 100%);
@@ -337,13 +391,13 @@ import { books } from '../data/books.js';
   .viewport::-webkit-scrollbar { display: none; }
   .viewport.dragging { cursor: grabbing; }
   .viewport:focus-visible { outline: 3px solid var(--wall-accent); outline-offset: -8px; }
-  .stage { position: relative; width: 2000px; height: 1800px; }
+  .stage { position: relative; width: 2800px; height: 2200px; }
 
   .field {
     position: absolute;
     inset: 0;
-    width: 2000px;
-    height: 1800px;
+    width: 2800px;
+    height: 2200px;
     transform-origin: 0 0;
     background-image:
       linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
@@ -354,12 +408,13 @@ import { books } from '../data/books.js';
   .field::before {
     content: '';
     position: absolute;
-    left: 950px;
-    top: 850px;
+    left: 50%;
+    top: 50%;
     width: 100px;
     height: 100px;
     border: 1px solid rgba(96, 165, 250, 0.28);
     border-radius: 50%;
+    transform: translate(-50%, -50%);
   }
 
   :global(.book) {
@@ -372,6 +427,8 @@ import { books } from '../data/books.js';
     border: 0;
     background: #dbe4ee;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
     box-shadow: 0 16px 24px rgba(2, 6, 23, 0.5), 0 2px 1px rgba(255, 255, 255, 0.42) inset;
     transform: rotate(var(--tilt));
     transition: transform 0.28s ease, box-shadow 0.28s ease;
@@ -417,6 +474,9 @@ import { books } from '../data/books.js';
     display: block;
     object-fit: cover;
     pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
   }
 
   :global(.book.fallback) {
