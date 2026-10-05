@@ -11,6 +11,7 @@
     "render:quarto": "quarto render quarto/"
   },
   "dependencies": {
+    "@astrojs/sitemap": "3.2.1",
     "@astrojs/tailwind": "^5.1.0",
     "astro": "^4.16.0",
     "d3-geo": "^3.1.1",

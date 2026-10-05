@@ -48,7 +48,7 @@ import { cv } from '../data/cv.js';
             <svg class="w-4 h-4 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            Secure payment via Stripe or Venmo
+            Simple online booking — no payment upfront
           </div>
         </div>
       </div>
@@ -67,8 +67,8 @@ import { cv } from '../data/cv.js';
             },
             {
               step: '02',
-              title: 'Book & pay',
-              desc: 'Pay securely via Stripe (credit/debit card) or Venmo. Then email to schedule your time slot.',
+              title: 'Request a booking',
+              desc: 'Fill out the short booking form with your goals and availability — no payment needed upfront.',
             },
             {
               step: '03',
@@ -86,7 +86,7 @@ import { cv } from '../data/cv.js';
           ))}
         </div>
         <p class="mt-6 text-sm text-slate-500">
-          After payment, email <a href={`mailto:${cv.personal.email}`} class="text-accent hover:underline">{cv.personal.email}</a> with your preferred date/time and a brief description of your goals.
+          After you submit the form, I'll reply by email to confirm your time slot. Questions first? Email <a href={`mailto:${cv.personal.email}`} class="text-accent hover:underline">{cv.personal.email}</a>.
         </p>
       </div>
     </section>
@@ -96,7 +96,6 @@ import { cv } from '../data/cv.js';
       <h2 class="font-serif text-3xl font-bold text-navy mb-2">Available Sessions</h2>
       <p class="text-slate-500 mb-10">All sessions are conducted live over video call. Prices are per session.</p>
 
-      <!-- REPLACE: add ?redirect_url=https://yoursite.netlify.app/booking-confirmed to your Stripe payment link -->
       <div class="space-y-6">
         {classes.map((cls) => (
           <ClassCard

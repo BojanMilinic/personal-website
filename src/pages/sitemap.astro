@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const postEntries = await getCollection('posts');
+const postChildren = postEntries
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .map((entry) => ({
+    href: `/posts/${entry.slug}`,
+    label: entry.data.title,
+    description: entry.data.summary,
+  }));
+
+const pages = [
+  { href: '/', label: 'Home', description: 'Home / CV landing page (professional nav)' },
+  { href: '/cv', label: 'CV', description: 'Full curriculum vitae — education, experience, technical background' },
+  { href: '/projects', label: 'Projects', description: 'List of Python tools and data science projects' },
+  { href: '/contact', label: 'Contact', description: 'Contact page for collaboration or tutoring inquiries' },
+  { href: '/posts', label: 'Writing', description: 'Blog post index generated from src/content/posts/*.md', children: postChildren },
+  { href: '/lab', label: 'Lab', description: 'Blog-building lab notes generated from src/content/lab/*.md' },
+  { href: '/blog-archive', label: 'Blog Archive', description: 'Links to archived static blog experiment snapshots' },
+  { href: '/teaching', label: 'Teaching', description: 'Teaching overview (teaching nav)' },
+  { href: '/globe', label: 'Globe (old)', description: 'Redirect stub — meta-refreshes to /globe-v2' },
+  { href: '/globe-v2', label: 'Globe Map', description: 'Country-outline map of students taught (teaching nav "Globe")' },
+  { href: '/globe-v3', label: 'Globe Atlas', description: 'Atlas variant of the students-taught map' },
+  { href: '/notebooks', label: 'Notebooks', description: 'Quarto notebooks for teaching (teaching nav)' },
+  { href: '/book', label: 'Book', description: 'Central booking form (Formspree) — redirects to booking-confirmed' },
+  { href: '/booking-confirmed', label: 'Booking Confirmed', description: 'Thank-you page shown after booking form submission' },
+  { href: '/dance', label: 'Dance', description: 'Branches of Dance landing page — QR code target on flyers' },
+  { href: '/dance-booking', label: 'Dance Booking', description: 'Free intro class booking page, links to /book' },
+];
+---
+
+<BaseLayout title="Sitemap" darkMode={true}>
+  <main class="max-w-3xl mx-auto px-6 py-16">
+    <h1 class="font-serif text-3xl font-bold text-white mb-2">Sitemap</h1>
+    <p class="text-slate-400 text-sm mb-10">Every page on the site, for internal review. Not linked from the nav.</p>
+
+    <ul class="divide-y divide-dark-border border-t border-b border-dark-border">
+      {pages.map(({ href, label, description, children }) => (
+        <li>
+          {children && children.length > 0 ? (
+            <details class="group">
+              <summary class="list-none cursor-pointer flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 py-4 hover:bg-dark-card transition-colors px-2 -mx-2 rounded">
+                <span class="font-mono text-xs text-accent-light shrink-0 sm:w-40 flex items-center gap-1.5">
+                  <svg class="w-3 h-3 shrink-0 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                  {href}
+                </span>
+                <span class="text-white font-semibold shrink-0 sm:w-36">{label}</span>
+                <span class="text-slate-400 text-sm">{description} <span class="text-slate-500">({children.length})</span></span>
+              </summary>
+              <ul class="pl-4 sm:pl-[calc(2rem+10rem)] pb-3 space-y-1 border-l border-dark-border/50 ml-2 sm:ml-0">
+                {children.map((child) => (
+                  <li>
+                    <a href={child.href} class="group/child flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-4 py-2 hover:bg-dark-card transition-colors px-2 -mx-2 rounded">
+                      <span class="font-mono text-xs text-slate-500 shrink-0 sm:w-56 truncate group-hover/child:text-accent-light transition-colors">{child.href}</span>
+                      <span class="text-slate-300 text-sm">{child.label}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : (
+            <a href={href} class="group flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 py-4 hover:bg-dark-card transition-colors px-2 -mx-2 rounded">
+              <span class="font-mono text-xs text-accent-light shrink-0 sm:w-40">{href}</span>
+              <span class="text-white font-semibold group-hover:text-accent-light transition-colors shrink-0 sm:w-36">{label}</span>
+              <span class="text-slate-400 text-sm">{description}</span>
+            </a>
+          )}
+        </li>
+      ))}
+    </ul>
+  </main>
+</BaseLayout>
