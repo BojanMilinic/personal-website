@@ -1,0 +1,529 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { books } from '../data/books.js';
+---
+
+<BaseLayout
+  title="Reading Wall"
+  description="A spatial gallery of books read by Bojan Milinic"
+  darkMode={true}
+  hideFooter={true}
+>
+  <main class="reading-shell">
+    <section class="wall-header" aria-labelledby="reading-title">
+      <div>
+        <p class="eyebrow">Personal library</p>
+        <h1 id="reading-title">Reading Wall</h1>
+      </div>
+      <p class="book-count" aria-live="polite">{books.length} books</p>
+      <label class="reveal-control">
+        <input id="reveal-all" type="checkbox" />
+        <span>Reveal all</span>
+      </label>
+    </section>
+
+    <div
+      class="viewport"
+      id="wall"
+      tabindex="0"
+      aria-label="A movable field of books. Drag, scroll, or use the arrow keys to explore."
+    >
+      <div class="stage" id="book-stage">
+        <div class="field" id="book-wall"></div>
+      </div>
+    </div>
+
+    <div class="wall-hint" aria-hidden="true">
+      <span>Drag to wander</span>
+      <span class="arrows">↖ &nbsp; ↑ &nbsp; ↗<br />← &nbsp; · &nbsp; →<br />↙ &nbsp; ↓ &nbsp; ↘</span>
+    </div>
+
+    <div class="zoom-controls" aria-label="Zoom controls">
+      <button id="zoom-out" type="button" aria-label="Zoom out">−</button>
+      <button id="zoom-level" type="button" aria-label="Reset zoom">100%</button>
+      <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
+    </div>
+
+    <dialog id="book-dialog" aria-labelledby="dialog-title">
+      <button class="dialog-close" type="button" aria-label="Close book details">×</button>
+      <div class="dialog-layout">
+        <img id="dialog-cover" alt="" />
+        <div class="dialog-copy">
+          <p class="dialog-kicker" id="dialog-year"></p>
+          <h2 id="dialog-title"></h2>
+          <p class="dialog-author" id="dialog-author"></p>
+        </div>
+      </div>
+    </dialog>
+
+    <script type="application/json" id="books-data" set:html={JSON.stringify(books)} />
+  </main>
+</BaseLayout>
+
+<script>
+  type Book = { title: string; author: string; year: number; isbn: string };
+
+  const data = document.querySelector<HTMLScriptElement>('#books-data');
+  const books: Book[] = data ? JSON.parse(data.textContent || '[]') : [];
+  const wall = document.querySelector<HTMLElement>('#book-wall');
+  const viewport = document.querySelector<HTMLElement>('#wall');
+  const stage = document.querySelector<HTMLElement>('#book-stage');
+  const dialog = document.querySelector<HTMLDialogElement>('#book-dialog');
+  const revealAll = document.querySelector<HTMLInputElement>('#reveal-all');
+  const coverUrl = (isbn: string) => `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+  const coverColors = ['#2563eb', '#0f766e', '#b45309', '#7c3aed', '#be123c', '#0369a1', '#4d7c0f', '#c2410c'];
+  const positions = [
+    [400, 255, 205, -0.25], [632, 305, 178, 0.18], [837, 245, 224, -0.12], [1088, 290, 188, 0.22], [1303, 250, 212, -0.16],
+    [435, 605, 180, 0.12], [642, 590, 218, -0.2], [887, 630, 187, 0.14], [1101, 598, 220, -0.1], [1348, 620, 176, 0.2],
+    [386, 910, 220, -0.18], [635, 945, 184, 0.1], [846, 930, 208, -0.14], [1082, 958, 182, 0.2], [1293, 925, 224, -0.12],
+    [455, 1270, 184, 0.18], [665, 1245, 214, -0.1], [906, 1285, 178, 0.14], [1111, 1245, 220, -0.18], [1360, 1280, 188, 0.1],
+  ];
+  let wasDragging = false;
+
+  if (wall && viewport && stage && dialog && revealAll) {
+    books.forEach((book, index) => {
+      const button = document.createElement('button');
+      button.className = 'book';
+      button.type = 'button';
+      button.style.setProperty('--delay', `${Math.min(index * 35, 700)}ms`);
+      const [x, y, size, tilt] = positions[index % positions.length];
+      const orbit = Math.floor(index / positions.length);
+      button.style.setProperty('--x', `${x + orbit * 120}px`);
+      button.style.setProperty('--y', `${y + orbit * 110}px`);
+      button.style.setProperty('--size', `${size}px`);
+      button.style.setProperty('--tilt', `${tilt}deg`);
+      button.style.setProperty('--cover-color', coverColors[index % coverColors.length]);
+      button.setAttribute('aria-pressed', 'false');
+      button.setAttribute('aria-label', `${book.title} by ${book.author}`);
+
+      const image = document.createElement('img');
+      image.src = coverUrl(book.isbn);
+      image.alt = `Cover of ${book.title}`;
+      image.loading = index < 8 ? 'eager' : 'lazy';
+      image.decoding = 'async';
+      image.addEventListener('error', () => {
+        image.remove();
+        button.classList.add('fallback');
+        const copy = document.createElement('span');
+        const title = document.createElement('strong');
+        const author = document.createElement('small');
+        title.textContent = book.title;
+        author.textContent = book.author;
+        copy.append(title, author);
+        button.append(copy);
+      });
+      button.append(image);
+
+      button.addEventListener('click', (event) => {
+        if (wasDragging) {
+          event.preventDefault();
+          return;
+        }
+        if (!button.classList.contains('revealed') && !wall.classList.contains('reveal-all')) {
+          button.classList.add('revealed');
+          button.setAttribute('aria-pressed', 'true');
+          return;
+        }
+        const dialogCover = document.querySelector<HTMLImageElement>('#dialog-cover');
+        const dialogTitle = document.querySelector<HTMLElement>('#dialog-title');
+        const dialogAuthor = document.querySelector<HTMLElement>('#dialog-author');
+        const dialogYear = document.querySelector<HTMLElement>('#dialog-year');
+        if (dialogCover && dialogTitle && dialogAuthor && dialogYear) {
+          dialogCover.src = coverUrl(book.isbn);
+          dialogCover.alt = `Cover of ${book.title}`;
+          dialogTitle.textContent = book.title;
+          dialogAuthor.textContent = book.author;
+          dialogYear.textContent = `First published ${book.year}`;
+          dialog.showModal();
+        }
+      });
+      wall.append(button);
+    });
+
+    revealAll.addEventListener('change', () => {
+      wall.classList.toggle('reveal-all', revealAll.checked);
+      wall.querySelectorAll('.book').forEach((book) => {
+        if (!revealAll.checked) book.classList.remove('revealed');
+        book.setAttribute('aria-pressed', revealAll.checked ? 'true' : 'false');
+      });
+    });
+
+    const fieldWidth = 2000;
+    const fieldHeight = 1800;
+    let zoom = 1;
+
+    const centerCollection = () => {
+      viewport.scrollLeft = (stage.offsetWidth - viewport.clientWidth) / 2;
+      viewport.scrollTop = (stage.offsetHeight - viewport.clientHeight) / 2;
+    };
+
+    const setZoom = (next: number, preserveCenter = true) => {
+      next = Math.min(1.8, Math.max(0.4, Math.round(next * 10) / 10));
+      const centerX = viewport.scrollLeft + viewport.clientWidth / 2;
+      const centerY = viewport.scrollTop + viewport.clientHeight / 2;
+      const fieldX = centerX / zoom;
+      const fieldY = centerY / zoom;
+      zoom = next;
+      wall.style.transform = `scale(${zoom})`;
+      stage.style.width = `${fieldWidth * zoom}px`;
+      stage.style.height = `${fieldHeight * zoom}px`;
+      const level = document.querySelector<HTMLButtonElement>('#zoom-level');
+      if (level) level.textContent = `${Math.round(zoom * 100)}%`;
+      if (preserveCenter) {
+        viewport.scrollLeft = fieldX * zoom - viewport.clientWidth / 2;
+        viewport.scrollTop = fieldY * zoom - viewport.clientHeight / 2;
+      }
+    };
+
+    requestAnimationFrame(() => {
+      setZoom(Math.min(1, Math.max(0.65, viewport.clientWidth / 1500)), false);
+      centerCollection();
+    });
+
+    document.querySelector('#zoom-in')?.addEventListener('click', () => setZoom(zoom + 0.2));
+    document.querySelector('#zoom-out')?.addEventListener('click', () => setZoom(zoom - 0.2));
+    document.querySelector('#zoom-level')?.addEventListener('click', () => setZoom(1));
+    viewport.addEventListener('wheel', (event) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      setZoom(zoom + (event.deltaY < 0 ? 0.1 : -0.1));
+    }, { passive: false });
+
+    let pointerDown = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+    viewport.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      if ((event.target as HTMLElement).closest('.book')) {
+        wasDragging = false;
+        return;
+      }
+      pointerDown = true;
+      wasDragging = false;
+      startX = event.clientX;
+      startY = event.clientY;
+      startLeft = viewport.scrollLeft;
+      startTop = viewport.scrollTop;
+      viewport.classList.add('dragging');
+      viewport.setPointerCapture(event.pointerId);
+    });
+    viewport.addEventListener('pointermove', (event) => {
+      if (!pointerDown) return;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.hypot(dx, dy) > 6) wasDragging = true;
+      viewport.scrollLeft = startLeft - dx;
+      viewport.scrollTop = startTop - dy;
+    });
+    const endDrag = () => {
+      pointerDown = false;
+      viewport.classList.remove('dragging');
+    };
+    viewport.addEventListener('pointerup', endDrag);
+    viewport.addEventListener('pointercancel', endDrag);
+    viewport.addEventListener('keydown', (event) => {
+      const step = event.shiftKey ? 240 : 80;
+      const moves: Record<string, [number, number]> = {
+        ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step],
+      };
+      if (!moves[event.key]) return;
+      event.preventDefault();
+      viewport.scrollBy({ left: moves[event.key][0], top: moves[event.key][1], behavior: 'smooth' });
+    });
+
+    document.querySelector('.dialog-close')?.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  }
+</script>
+
+<style>
+  .reading-shell {
+    --wall-ink: #e2e8f0;
+    --wall-panel: rgba(15, 23, 42, 0.88);
+    --wall-accent: #60a5fa;
+    position: relative;
+    height: calc(100dvh - 4rem);
+    min-height: 38rem;
+    overflow: hidden;
+    color: var(--wall-ink);
+    background: #111827;
+  }
+
+  .reading-shell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    pointer-events: none;
+    opacity: 0.12;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+  }
+
+  .wall-header {
+    position: absolute;
+    z-index: 12;
+    left: clamp(1rem, 3vw, 3rem);
+    top: clamp(1rem, 3vw, 2.4rem);
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-end;
+    padding: 1rem 1.15rem;
+    background: var(--wall-panel);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    box-shadow: 0 14px 38px rgba(2, 6, 23, 0.42);
+    backdrop-filter: blur(12px);
+    pointer-events: none;
+  }
+
+  .eyebrow,
+  .book-count {
+    margin: 0;
+    font: 500 0.72rem/1.2 'JetBrains Mono', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .eyebrow { color: #94a3b8; }
+  .book-count { padding-bottom: 0.25rem; color: var(--wall-accent); }
+
+  h1 {
+    margin: 0.25rem 0 0;
+    font: 600 clamp(1.8rem, 3vw, 3rem)/0.95 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+
+  .reveal-control {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2rem;
+    padding: 0.35rem 0.55rem;
+    margin-bottom: -0.1rem;
+    font: 500 0.78rem/1.2 'JetBrains Mono', monospace;
+    cursor: pointer;
+    pointer-events: auto;
+    user-select: none;
+  }
+
+  .reveal-control input {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    accent-color: #3b82f6;
+    cursor: pointer;
+  }
+
+  .reveal-control:has(input:focus-visible) { outline: 2px solid var(--wall-accent); outline-offset: 2px; }
+
+  .viewport {
+    position: absolute;
+    inset: 0;
+    overflow: scroll;
+    cursor: grab;
+    touch-action: none;
+    overscroll-behavior: none;
+    scrollbar-width: none;
+    background:
+      radial-gradient(circle at 50% 45%, rgba(37, 99, 235, 0.22), transparent 35%),
+      radial-gradient(circle at 50% 50%, #243247 0, #172033 50%, #0b1220 100%);
+  }
+
+  .viewport::-webkit-scrollbar { display: none; }
+  .viewport.dragging { cursor: grabbing; }
+  .viewport:focus-visible { outline: 3px solid var(--wall-accent); outline-offset: -8px; }
+  .stage { position: relative; width: 2000px; height: 1800px; }
+
+  .field {
+    position: absolute;
+    inset: 0;
+    width: 2000px;
+    height: 1800px;
+    transform-origin: 0 0;
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+    background-size: 160px 160px;
+  }
+
+  .field::before {
+    content: '';
+    position: absolute;
+    left: 950px;
+    top: 850px;
+    width: 100px;
+    height: 100px;
+    border: 1px solid rgba(96, 165, 250, 0.28);
+    border-radius: 50%;
+  }
+
+  :global(.book) {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--size);
+    display: flex;
+    padding: 0;
+    border: 0;
+    background: #dbe4ee;
+    cursor: pointer;
+    box-shadow: 0 16px 24px rgba(2, 6, 23, 0.5), 0 2px 1px rgba(255, 255, 255, 0.42) inset;
+    transform: rotate(var(--tilt));
+    transition: transform 0.28s ease, box-shadow 0.28s ease;
+    opacity: 0;
+    animation: arrive 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation-delay: var(--delay);
+  }
+
+  :global(.book::before) {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: var(--cover-color);
+    opacity: 1;
+    transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  :global(.book.revealed::before),
+  :global(.field.reveal-all .book::before) { opacity: 0; }
+
+  :global(.book::after) {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    pointer-events: none;
+  }
+
+  :global(.book:hover),
+  :global(.book:focus-visible) {
+    z-index: 3;
+    outline: 3px solid #fff;
+    outline-offset: 5px;
+    transform: rotate(0) scale(1.07);
+    box-shadow: 0 30px 38px rgba(2, 6, 23, 0.65);
+  }
+
+  :global(.book img) {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    display: block;
+    object-fit: cover;
+    pointer-events: none;
+  }
+
+  :global(.book.fallback) {
+    aspect-ratio: 2 / 3;
+    padding: 1rem;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #0f172a;
+    background: linear-gradient(145deg, #dbe4ee, #a9bdd0);
+  }
+
+  :global(.book.fallback span) { display: flex; flex-direction: column; gap: 1rem; }
+  :global(.book.fallback strong) { font: 600 1rem/1.2 'Playfair Display', Georgia, serif; }
+  :global(.book.fallback small) { font: 0.65rem/1.4 'JetBrains Mono', monospace; }
+
+  .wall-hint {
+    position: absolute;
+    z-index: 12;
+    right: clamp(1rem, 3vw, 3rem);
+    bottom: clamp(1rem, 3vw, 2.4rem);
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 0.75rem 1rem;
+    color: #fff;
+    background: var(--wall-panel);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    backdrop-filter: blur(10px);
+    font: 500 0.65rem/1.2 'JetBrains Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  .arrows { text-align: center; font-size: 0.72rem; line-height: 1.5; letter-spacing: 0; opacity: 0.7; }
+
+  .zoom-controls {
+    position: absolute;
+    z-index: 12;
+    left: clamp(1rem, 3vw, 3rem);
+    bottom: clamp(1rem, 3vw, 2.4rem);
+    display: flex;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.4);
+  }
+
+  .zoom-controls button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0 0.8rem;
+    border: 0;
+    border-right: 1px solid rgba(148, 163, 184, 0.2);
+    color: #e2e8f0;
+    background: var(--wall-panel);
+    font: 500 1.15rem/1 'JetBrains Mono', monospace;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+  }
+
+  .zoom-controls button:last-child { border-right: 0; }
+  .zoom-controls button:hover,
+  .zoom-controls button:focus-visible { color: #fff; background: #1e3a5f; outline: 2px solid var(--wall-accent); outline-offset: -2px; }
+  .zoom-controls #zoom-level { min-width: 4.25rem; font-size: 0.72rem; }
+
+  @keyframes arrive {
+    from { opacity: 0; transform: translateY(25px) rotate(var(--tilt)); }
+    to { opacity: 1; transform: rotate(var(--tilt)); }
+  }
+
+  dialog {
+    width: min(760px, calc(100% - 2rem));
+    padding: 0;
+    border: 1px solid #334155;
+    border-radius: 0.75rem;
+    color: #e2e8f0;
+    background: #111827;
+    box-shadow: 0 35px 90px rgba(2, 6, 23, 0.75);
+  }
+
+  dialog::backdrop { background: rgba(2, 6, 23, 0.82); backdrop-filter: blur(8px); }
+  .dialog-close { position: absolute; top: 0.8rem; right: 1rem; z-index: 2; border: 0; color: #e2e8f0; background: transparent; font: 2rem/1 Georgia, serif; cursor: pointer; }
+  .dialog-close:focus-visible { outline: 2px solid var(--wall-accent); outline-offset: 2px; }
+  .dialog-layout { display: grid; grid-template-columns: minmax(210px, 42%) 1fr; min-height: 430px; }
+  .dialog-layout img { width: 100%; height: 100%; object-fit: cover; background: #1e293b; }
+  .dialog-copy { padding: clamp(2rem, 5vw, 4rem); align-self: center; }
+  .dialog-kicker { color: var(--wall-accent); font: 500 0.7rem/1.3 'JetBrains Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; }
+  .dialog-copy h2 { margin: 1rem 0; color: #fff; font: 600 clamp(2rem, 4vw, 3.5rem)/1 'Playfair Display', Georgia, serif; }
+  .dialog-author { color: #cbd5e1; font: 0.82rem/1.5 'JetBrains Mono', monospace; }
+
+  @media (max-width: 640px) {
+    .reading-shell { min-height: 34rem; }
+    .wall-header { left: 0.8rem; top: 0.8rem; max-width: calc(100% - 1.6rem); gap: 0.7rem; padding: 0.8rem; align-items: center; flex-wrap: wrap; }
+    .eyebrow { display: none; }
+    .book-count { font-size: 0.65rem; }
+    .reveal-control { font-size: 0.72rem; }
+    .wall-hint { right: 0.8rem; bottom: 0.8rem; }
+    .wall-hint > span:first-child { display: none; }
+    .zoom-controls { left: 0.8rem; bottom: 0.8rem; }
+    .dialog-layout { display: block; }
+    .dialog-layout img { width: 42%; height: auto; max-height: 250px; margin: 2rem 0 0 2rem; }
+    .dialog-copy { padding: 2rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.book) { animation: none; opacity: 1; transition: none; }
+  }
+</style>

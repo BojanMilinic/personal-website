@@ -7,6 +7,7 @@ interface Props {
   description?: string;
   darkMode?: boolean;
   navVariant?: 'professional' | 'teaching';
+  hideFooter?: boolean;
 }
 
 const {
@@ -14,6 +15,7 @@ const {
   description = 'Bojan Milinic — Physical Scientist & Python Educator',
   darkMode = false,
   navVariant = 'professional',
+  hideFooter = false,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -54,7 +56,7 @@ const fullTitle = `${title} · Bojan Milinic`;
     )}
     <Nav variant={navVariant} />
     <slot />
-    <Footer darkMode={darkMode} />
+    {!hideFooter && <Footer darkMode={darkMode} />}
   </body>
 </html>
 
