@@ -47,11 +47,6 @@ const libraryPhotos = [
       </div>
     </div>
 
-    <div class="wall-hint" aria-hidden="true">
-      <span>Drag to wander</span>
-      <span class="arrows">↖ &nbsp; ↑ &nbsp; ↗<br />← &nbsp; · &nbsp; →<br />↙ &nbsp; ↓ &nbsp; ↘</span>
-    </div>
-
     <div class="zoom-controls" aria-label="Zoom controls">
       <button id="zoom-out" type="button" aria-label="Zoom out">−</button>
       <button id="zoom-level" type="button" aria-label="Reset zoom">100%</button>
@@ -542,27 +537,6 @@ const libraryPhotos = [
   :global(.book.fallback strong) { font: 600 1rem/1.2 'Playfair Display', Georgia, serif; }
   :global(.book.fallback small) { font: 0.65rem/1.4 'JetBrains Mono', monospace; }
 
-  .wall-hint {
-    position: absolute;
-    z-index: 12;
-    right: clamp(1rem, 3vw, 3rem);
-    bottom: clamp(1rem, 3vw, 2.4rem);
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    padding: 0.75rem 1rem;
-    color: #fff;
-    background: var(--wall-panel);
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    backdrop-filter: blur(10px);
-    font: 500 0.65rem/1.2 'JetBrains Mono', monospace;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    pointer-events: none;
-  }
-
-  .arrows { text-align: center; font-size: 0.72rem; line-height: 1.5; letter-spacing: 0; opacity: 0.7; }
-
   .library-credit {
     position: absolute;
     z-index: 12;
@@ -656,8 +630,6 @@ const libraryPhotos = [
     .eyebrow { display: none; }
     .book-count { font-size: 0.65rem; }
     .reveal-control { font-size: 0.72rem; }
-    .wall-hint { right: 0.8rem; bottom: 0.8rem; }
-    .wall-hint > span:first-child { display: none; }
     .zoom-controls { left: 0.8rem; bottom: 0.8rem; }
     .library-credit { left: 0.8rem; bottom: 4.3rem; max-width: calc(100% - 1.6rem); font-size: 0.7rem; }
     .library-dialog-header { padding: 1rem; }
