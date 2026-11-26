@@ -1,4 +1,13 @@
 ---
+interface Reference {
+  authors: string;
+  year: number;
+  title: string;
+  publication: string;
+  doi: string;
+  href: string;
+}
+
 interface Props {
   title: string;
   description: string;
@@ -6,10 +15,12 @@ interface Props {
   github?: string | null;
   demo?: string | null;
   links?: { label: string; href: string }[];
+  references?: Reference[];
   featured?: boolean;
 }
 
-const { title, description, tags, github = null, demo = null, links = [], featured = false } = Astro.props;
+const { title, description, tags, github = null, demo = null, links = [], references = [], featured = false } = Astro.props;
+const ownerCitationName = 'Milinic, B.';
 
 // Color map for common tech tags
 const tagColors: Record<string, string> = {
@@ -61,6 +72,22 @@ function tagClass(tag: string) {
       </span>
     ))}
   </div>
+
+  {references.length > 0 && (
+    <ul aria-label="References" class="space-y-3 pt-4 border-t border-dark-border/50">
+      {references.map(({ authors, year, title, publication, doi, href }) => {
+        const [beforeName, afterName] = authors.split(ownerCitationName);
+
+        return (
+          <li class="text-sm leading-relaxed text-slate-400">
+            {beforeName}{afterName !== undefined && <><strong class="font-semibold text-slate-300">{ownerCitationName}</strong>{afterName}</>} ({year}).
+            {' '}<cite>{title}</cite>. {publication}.
+            {' '}<a href={href} target="_blank" rel="noopener noreferrer" class="text-accent-light hover:underline">{doi}</a>
+          </li>
+        );
+      })}
+    </ul>
+  )}
 
   <!-- Links -->
   {(github || demo || links.length > 0) && (
