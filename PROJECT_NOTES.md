@@ -45,12 +45,9 @@ When prices change, update three places:
 
 | Remote | Repo | Purpose |
 |---|---|---|
-| `origin` | `ssgokuclaw/personal-website` | Working fork |
-| (not yet added) | `BojanMilinic/personal-website` | Netlify watches this |
+| `origin` | `BojanMilinic/personal-website` | Primary repository; Netlify watches `main` |
 
-To add upstream: `git remote add upstream git@github.com:BojanMilinic/personal-website.git`
-
-Pushing to `origin` alone does **not** update the live site.
+After committing, `git push origin main` updates the branch Netlify deploys.
 
 ---
 
@@ -60,7 +57,6 @@ Pushing to `origin` alone does **not** update the live site.
 - [ ] Update Formspree `_next` redirect URL to `bojanmilinic.com` once domain is confirmed live
 - [ ] Add Stripe payment links when ready to collect payment upfront
 - [ ] Add Calendly links to `/booking-confirmed` and `/dance-booking` once account is set up
-- [ ] Add `upstream` remote for BojanMilinic repo
 - [ ] Consider adding availability/timezone and goal fields to `/book` form
 - [ ] Confirm Formspree email notifications are active in dashboard
 
@@ -91,6 +87,7 @@ Archive link note:
 
 Current live routes:
 
+- `/reading` renders the draggable Reading Wall from `src/data/books.js`; cover images are requested from Open Library by ISBN
 - `/posts` lists Writing posts from `src/content/posts/`
 - `/posts/[slug]` renders individual Writing posts
 - `/lab` lists public workflow notes from `src/content/lab/`
@@ -125,6 +122,7 @@ Responsibilities:
 Current operating model:
 
 - Astro owns the live site.
+- `src/data/books.js` is the Reading Wall catalog; `/reading` fetches Open Library covers by ISBN and derives each tile color from its cover.
 - Markdown in `src/content/posts/` becomes Writing pages.
 - Markdown in `src/content/lab/` becomes Lab pages.
 - Pelican is only an archived experiment, not the normal publishing engine.

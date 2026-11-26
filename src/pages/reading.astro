@@ -1,6 +1,16 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { books } from '../data/books.js';
+
+const libraryPhotos = [
+  { file: 'book-wall', alt: 'A wall of book covers arranged in shades of blue, green, and cream at Boston Public Library.' },
+  { file: 'courtyard', alt: 'The library courtyard with its fountain, garden, and arched walkways.' },
+  { file: 'entrance', alt: 'Ornate bronze doors and glowing globe lamps in the library entrance hall.' },
+  { file: 'staircase', alt: 'Marble lions beside the grand staircase beneath murals and a chandelier.' },
+  { file: 'reading-room', alt: 'Readers working beneath the vaulted ceiling and green lamps of the library reading room.' },
+  { file: 'vaulted-ceiling', alt: 'The detailed vaulted reading room ceiling above rows of green desk lamps.' },
+  { file: 'reading-room-fireplace', alt: 'Marble busts around a reading room fireplace, with readers and green desk lamps.' },
+];
 ---
 
 <BaseLayout
@@ -21,6 +31,11 @@ import { books } from '../data/books.js';
         <span>Reveal all</span>
       </label>
     </section>
+
+    <p class="library-credit">
+      <button id="library-thanks" type="button" aria-haspopup="dialog" aria-controls="library-dialog">Thank you</button>,
+      <a href="https://www.bpl.org">Boston Public Library</a>, for inspiring this wall.
+    </p>
 
     <div
       class="viewport"
@@ -56,11 +71,46 @@ import { books } from '../data/books.js';
       </div>
     </dialog>
 
+    <dialog id="library-dialog" class="library-dialog" aria-labelledby="library-title">
+      <div class="library-dialog-header">
+        <div>
+          <p class="dialog-kicker">The inspiration</p>
+          <h2 id="library-title">Thank you, Boston Public Library.</h2>
+          <p>A few moments from the place that inspired this Reading Wall.</p>
+        </div>
+        <button class="library-close" type="button" aria-label="Close library photos" autofocus>×</button>
+      </div>
+      <div id="library-photos" class="library-photos"></div>
+      <template id="library-photos-template">
+        {libraryPhotos.map(({ file, alt }, index) => (
+          <img src={`/images/boston-public-library/${file}.webp`} alt={alt} width="1200" height="1600" loading={index === 0 ? 'eager' : 'lazy'} decoding="async" />
+        ))}
+      </template>
+    </dialog>
+
     <script type="application/json" id="books-data" set:html={JSON.stringify(books)} />
   </main>
 </BaseLayout>
 
 <script>
+  const libraryDialog = document.querySelector<HTMLDialogElement>('#library-dialog');
+  document.querySelector('#library-thanks')?.addEventListener('click', () => {
+    const photos = document.querySelector('#library-photos');
+    const template = document.querySelector<HTMLTemplateElement>('#library-photos-template');
+    if (photos && template && !photos.hasChildNodes()) {
+      photos.append(template.content.cloneNode(true));
+    }
+    libraryDialog?.showModal();
+  });
+  document.querySelector('.library-close')?.addEventListener('click', () => libraryDialog?.close());
+  libraryDialog?.addEventListener('click', (event) => {
+    if (event.target !== libraryDialog) return;
+    const bounds = libraryDialog.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) {
+      libraryDialog.close();
+    }
+  });
+
   type Book = { title: string; author: string; year: number; isbn: string };
 
   const data = document.querySelector<HTMLScriptElement>('#books-data');
@@ -514,6 +564,38 @@ import { books } from '../data/books.js';
 
   .arrows { text-align: center; font-size: 0.72rem; line-height: 1.5; letter-spacing: 0; opacity: 0.7; }
 
+  .library-credit {
+    position: absolute;
+    z-index: 12;
+    left: clamp(1rem, 3vw, 3rem);
+    bottom: calc(clamp(1rem, 3vw, 2.4rem) + 3.5rem);
+    max-width: calc(100% - 2rem);
+    margin: 0;
+    padding: 0.65rem 0.8rem;
+    color: #cbd5e1;
+    background: var(--wall-panel);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 0.5rem;
+    backdrop-filter: blur(10px);
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+  .library-credit button, .library-credit a { color: #bfdbfe; text-decoration: underline; text-underline-offset: 3px; }
+  .library-credit button { padding: 0; border: 0; background: transparent; font: inherit; cursor: pointer; }
+  .library-credit button:hover, .library-credit a:hover { color: #fff; }
+  .library-credit button:focus-visible, .library-credit a:focus-visible { outline: 2px solid var(--wall-accent); outline-offset: 3px; }
+
+  .library-dialog { width: min(1000px, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; }
+  .library-dialog-header { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.5rem; background: #111827; border-bottom: 1px solid #334155; }
+  .library-dialog-header .dialog-kicker { margin: 0 0 0.5rem; }
+  .library-dialog-header h2 { margin: 0; color: #fff; font: 600 clamp(1.35rem, 3vw, 2rem)/1.2 'Playfair Display', Georgia, serif; }
+  .library-dialog-header p:last-child { margin: 0.5rem 0 0; color: #cbd5e1; font-size: 0.85rem; }
+  .library-close { align-self: flex-start; flex-shrink: 0; width: 2.75rem; height: 2.75rem; border: 1px solid #475569; border-radius: 50%; background: #1e293b; color: #fff; font: 2rem/1 Georgia, serif; cursor: pointer; }
+  .library-close:focus-visible { outline: 2px solid var(--wall-accent); outline-offset: 3px; }
+  .library-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; padding: 1.5rem; }
+  :global(.library-photos img) { display: block; width: 100%; height: auto; border-radius: 0.25rem; }
+  :global(.library-photos img:first-child) { grid-column: 1 / -1; max-height: 75dvh; object-fit: contain; background: #0b1220; }
+
   .zoom-controls {
     position: absolute;
     z-index: 12;
@@ -578,6 +660,9 @@ import { books } from '../data/books.js';
     .wall-hint { right: 0.8rem; bottom: 0.8rem; }
     .wall-hint > span:first-child { display: none; }
     .zoom-controls { left: 0.8rem; bottom: 0.8rem; }
+    .library-credit { left: 0.8rem; bottom: 4.3rem; max-width: calc(100% - 1.6rem); font-size: 0.7rem; }
+    .library-dialog-header { padding: 1rem; }
+    .library-photos { grid-template-columns: 1fr; padding: 1rem; }
     .dialog-layout { display: block; }
     .dialog-layout img { width: 42%; height: auto; max-height: 250px; margin: 2rem 0 0 2rem; }
     .dialog-copy { padding: 2rem; }

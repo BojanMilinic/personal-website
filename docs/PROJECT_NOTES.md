@@ -1,6 +1,6 @@
 # Project Notes — Bojan Milinic Personal Website
 
-_Last updated: 2026-05-06_
+_Last updated: 2026-10-05_
 
 ---
 
@@ -18,7 +18,7 @@ A personal website for Bojan Milinic — Physical Scientist & Python Educator at
 | **Tailwind CSS 3** | Utility-class styling |
 | **Quarto 1.9** | Renders `.qmd` notebooks (Python) to self-contained HTML |
 | **D3 v7** (CDN) | Interactive globe on the `/globe` page |
-| **Netlify** | Deployment target (not yet configured — see Next Steps) |
+| **Netlify** | Production hosting; auto-deploys `main` from `BojanMilinic/personal-website` |
 
 ---
 
@@ -29,6 +29,7 @@ A personal website for Bojan Milinic — Physical Scientist & Python Educator at
 | `/` | `src/pages/index.astro` | Home / landing page |
 | `/cv` | `src/pages/cv.astro` | CV / resume |
 | `/projects` | `src/pages/projects.astro` | Scientific tools and data workflows |
+| `/reading` | `src/pages/reading.astro` | Draggable Reading Wall generated from `src/data/books.js`; covers load from Open Library by ISBN |
 | `/teaching` | `src/pages/teaching.astro` | Teaching history |
 | `/globe` | `src/pages/globe.astro` | Interactive 3D globe — highlights countries with taught students |
 | `/notebooks` | `src/pages/notebooks.astro` | Index of rendered Quarto notebooks |
@@ -162,7 +163,6 @@ python3 -m pip install jupyter nbformat matplotlib pandas
 
 ## What's Left / Next Steps
 
-- [ ] **Netlify deployment** — connect the repo, set build command to `npm run build`, publish dir to `dist/`. Quarto notebooks must be pre-rendered and committed to `public/notebooks/` before deploy (Netlify build environment won't have Quarto/Python).
 - [ ] **Fill in placeholder content** — CV page, Teaching page, and Contact page likely still have placeholder copy.
 - [ ] **Globe: more countries** — edit `src/data/taughtCountries.js` as teaching expands.
 - [ ] **More notebooks** — add additional `.qmd` analyses to `quarto/` and register them in `notebooks.astro`.
