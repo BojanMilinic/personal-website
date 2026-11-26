@@ -1,4 +1,6 @@
 ---
+import { showWriting } from '../data/site.js';
+
 interface Props {
   variant?: 'professional' | 'teaching';
 }
@@ -10,7 +12,7 @@ const professionalLinks = [
   { href: '/cv', label: 'CV' },
   { href: '/projects', label: 'Projects' },
   { href: '/reading', label: 'Reading' },
-  { href: '/posts', label: 'Writing' },
+  ...(showWriting ? [{ href: '/posts', label: 'Writing' }] : []),
   { href: '/contact', label: 'Contact' },
 ];
 

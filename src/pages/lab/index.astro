@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { showWriting } from '../../data/site.js';
 
 const notes = (await getCollection('lab')).sort(
   (a, b) => a.data.date.valueOf() - b.data.date.valueOf()
@@ -29,7 +30,7 @@ const formatDate = (date: Date) =>
         Notes about how the blog was built, what each workflow taught, and what should be tried next.
       </p>
       <div class="mt-6 flex flex-wrap gap-4 text-sm">
-        <a href="/posts" class="text-accent-light hover:text-white transition-colors">Writing</a>
+        {showWriting && <a href="/posts" class="text-accent-light hover:text-white transition-colors">Writing</a>}
         <a href="/blog-archive" class="text-slate-400 hover:text-white transition-colors">Experiment archive</a>
       </div>
     </section>

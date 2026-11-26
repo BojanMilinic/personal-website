@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import { showWriting } from '../data/site.js';
 
 const postEntries = await getCollection('posts');
 const postChildren = postEntries
@@ -28,7 +29,7 @@ const pages = [
   { href: '/booking-confirmed', label: 'Booking Confirmed', description: 'Thank-you page shown after booking form submission' },
   { href: '/dance', label: 'Dance', description: 'Branches of Dance landing page — QR code target on flyers' },
   { href: '/dance-booking', label: 'Dance Booking', description: 'Free intro class booking page, links to /book' },
-];
+].filter(({ href }) => showWriting || href !== '/posts');
 ---
 
 <BaseLayout title="Sitemap" darkMode={true}>
