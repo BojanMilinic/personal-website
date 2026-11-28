@@ -1,3 +1,6 @@
+const watershedDataRelease = { label: 'USGS data release', href: 'https://doi.org/10.5066/P9KFU815' };
+const ericksonPaper = { label: 'Erickson et al. 2024', href: 'https://doi.org/10.1007/s10661-024-12362-2' };
+
 export const projects = [
   {
     title: 'Groundwater Level Data Compiler and Data Pipeline',
@@ -15,11 +18,9 @@ export const projects = [
   {
     title: 'Geospatial Data Summarization and Figure Automation',
     description:
-      'ArcPy-based workflow for automatically generating publication-quality geospatial figures from hydrological model outputs — reducing manual GIS drafting from days to minutes. Transformed raw geogenic water contamination data into national percentiles by study basin. Produced figures 3–6 in Erickson et al. (Environmental Monitoring and Assessment, 2024).',
+      'ArcPy-based workflow for automatically generating publication-quality geospatial figures from hydrological model outputs — reducing manual GIS drafting from days to minutes. Transformed raw geogenic water contamination data into national percentiles by study basin. Used data from the companion USGS Watershed Prioritization Data Release to create figures 3–6 in Erickson et al. (Environmental Monitoring and Assessment, 2024).',
     tags: ['Python', 'ArcGIS Pro', 'ArcPy', 'GIS', 'Watershed'],
-    links: [
-      { label: 'Erickson et al. 2024', href: 'https://doi.org/10.1007/s10661-024-12362-2' },
-    ],
+    links: [ericksonPaper, watershedDataRelease],
     github: null,
     demo: null,
     featured: true,
@@ -84,11 +85,9 @@ export const projects = [
   {
     title: 'USGS Watershed Prioritization Data Release',
     description:
-      'Coauthored a USGS watershed-prioritization data release covering more than 100 geospatial variables summarized by HUC4 watershed across 18 hydrologic regions.',
+      'Coauthored a USGS watershed-prioritization data release covering more than 100 geospatial variables summarized by HUC4 watershed across 18 hydrologic regions. The companion geospatial figure automation workflow used data from this release to create figures 3–6 in Erickson et al. (2024).',
     tags: ['Geospatial', 'Hydrology', 'Watershed'],
-    links: [
-      { label: 'USGS data release', href: 'https://doi.org/10.5066/P9KFU815' },
-    ],
+    links: [watershedDataRelease, ericksonPaper],
     github: null,
     demo: null,
     featured: false,
